@@ -162,37 +162,30 @@ print_install "Membuat direktori xray"
     export IP=$( curl -s https://ipinfo.io/ip/ )
 
  # Mendapatkan ID dan versi OS
-install_haproxy_dependencies() {
-    # Mendapatkan ID dan versi OS
-    OS_ID=$(grep -w ID /etc/os-release | head -n1 | sed 's/ID=//g' | sed 's/"//g')
-    OS_VERSION_ID=$(grep -w VERSION_ID /etc/os-release | head -n1 | sed 's/VERSION_ID=//g' | sed 's/"//g')
-    OS_PRETTY_NAME=$(grep -w PRETTY_NAME /etc/os-release | head -n1 | sed 's/PRETTY_NAME=//g' | sed 's/"//g')
-
-    if [[ "$OS_ID" == "ubuntu" ]]; then
-        echo "Setup Dependencies for OS: $OS_PRETTY_NAME"
-        # Perbarui daftar paket
-        sudo apt update -y
-
-        # Instal dependensi dasar
-        sudo apt-get install -y --no-install-recommends software-properties-common apt-transport-https ca-certificates curl gnupg lsb-release
-
-        # Instal HAProxy dari repo Ubuntu
-        echo "Menginstal HAProxy versi terbaru dari repositori resmi Ubuntu..."
-        apt-get install -y haproxy
-
-        # (Optional PPA logic bisa ditambahkan di sini jika diperlukan)
-
-   
-        echo "Setup Dependencies For OS Is $OS_PRETTY_NAME"
-        sudo apt-get update -y
-        sudo apt-get install -y --no-install-recommends apt-transport-https ca-certificates curl gnupg lsb-release
-        sudo apt-get update -y
-        sudo apt-get install -y haproxy
-
-
-
-    print_success "HAProxy"  # Dipanggil setelah pengecekan OS selesai
-    fi
+function first_setup(){
+    timedatectl set-timezone Asia/Jakarta
+    echo iptables-persistent iptables-persistent/autosave_v4 boolean true | debconf-set-selections
+    echo iptables-persistent iptables-persistent/autosave_v6 boolean true | debconf-set-selections
+    print_success "Directory Xray"
+    if [[ $(cat /etc/os-release | grep -w ID | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/ID//g') == "ubuntu" ]]; then
+    echo "Setup Dependencies $(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g')"
+    sudo apt update -y
+    apt-get install --no-install-recommends software-properties-common
+    add-apt-repository ppa:vbernat/haproxy-2.0 -y
+    apt-get -y install haproxy=2.0.\*
+elif [[ $(cat /etc/os-release | grep -w ID | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/ID//g') == "debian" ]]; then
+    echo "Setup Dependencies For OS Is $(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g')"
+    curl https://haproxy.debian.net/bernat.debian.org.gpg |
+        gpg --dearmor >/usr/share/keyrings/haproxy.debian.net.gpg
+    echo deb "[signed-by=/usr/share/keyrings/haproxy.debian.net.gpg]" \
+        http://haproxy.debian.net buster-backports-1.8 main \
+        >/etc/apt/sources.list.d/haproxy.list
+    sudo apt-get update
+    apt-get -y install haproxy=1.8.\*
+else
+    echo -e " Your OS Is Not Supported ($(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g') )"
+    exit 1
+fi
 }
 
 
