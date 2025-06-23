@@ -192,6 +192,7 @@ install_haproxy_dependencies() {
 
 
     print_success "HAProxy"  # Dipanggil setelah pengecekan OS selesai
+    fi
 }
 
 
